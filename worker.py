@@ -10,6 +10,7 @@ Environment variables:
     BENCHMARK_PAYLOAD   — JSON string for benchmark test payload (default: {"echo":"benchmark"})
 """
 
+
 import json
 import os
 
@@ -17,9 +18,7 @@ from vastai import BenchmarkConfig, HandlerConfig, LogActionConfig, Worker, Work
 
 MODEL_SERVER_PORT = int(os.environ.get("MODEL_SERVER_PORT", "18000"))
 MAX_QUEUE_TIME = float(os.environ.get("MAX_QUEUE_TIME", "300"))
-BENCHMARK_PAYLOAD = json.loads(
-    os.environ.get("BENCHMARK_PAYLOAD", '{"echo": "benchmark"}')
-)
+BENCHMARK_PAYLOAD = json.loads(os.environ.get("BENCHMARK_PAYLOAD", '{"echo": "benchmark"}'))
 
 
 worker_config = WorkerConfig(
@@ -27,6 +26,7 @@ worker_config = WorkerConfig(
     model_server_port=MODEL_SERVER_PORT,
     model_log_file="/var/log/model/server.log",
     handlers=[
+        # Sync handler — FIFO queue, has benchmark
         HandlerConfig(
             route="/process",
             allow_parallel_requests=False,
@@ -37,6 +37,20 @@ worker_config = WorkerConfig(
                 runs=2,
                 concurrency=1,
             ),
+        ),
+        # Async submit — instant return, parallel OK
+        HandlerConfig(
+            route="/jobs/submit",
+            allow_parallel_requests=True,
+            max_queue_time=30.0,
+            workload_calculator=lambda payload: 100.0,
+        ),
+        # Async poll — instant return, parallel OK, zero cost
+        HandlerConfig(
+            route="/jobs/status",
+            allow_parallel_requests=True,
+            max_queue_time=30.0,
+            workload_calculator=lambda payload: 0.0,
         ),
     ],
     log_action_config=LogActionConfig(
