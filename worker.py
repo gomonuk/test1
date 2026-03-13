@@ -25,7 +25,7 @@ worker_config = WorkerConfig(
     model_server_url="http://127.0.0.1",
     model_server_port=MODEL_SERVER_PORT,
     model_log_file="/var/log/model/server.log",
-    max_sessions=4,
+    max_sessions=2,
     handlers=[
         # Sync handler — FIFO queue, has benchmark
         HandlerConfig(
@@ -57,8 +57,6 @@ worker_config = WorkerConfig(
     log_action_config=LogActionConfig(
         on_load=["Application startup complete."],
         on_error=[
-            "Traceback (most recent call last):",
-            "RuntimeError:",
             "CUDA error:",
         ],
     ),
